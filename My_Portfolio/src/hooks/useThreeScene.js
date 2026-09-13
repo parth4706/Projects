@@ -20,6 +20,7 @@ export function useThreeScene(canvasRef, reduceMotion, setMouse) {
     let floaters;
     let clock;
     let frame;
+    let visualFrame = 0;
     let scrollProgress = 0;
     let sceneReady = false;
     const pointer = new THREE.Vector2();
@@ -169,6 +170,30 @@ export function useThreeScene(canvasRef, reduceMotion, setMouse) {
         camera.position.y += (-my * 0.7 - camera.position.y) * 0.045;
       camera.position.z += (14 - camera.position.z) * 0.045;
       camera.lookAt(0, 0, 0);
+      if (visualFrame % 2 === 0) {
+        const visuals = [];
+        const projected = new THREE.Vector3();
+        const addVisual = (position, radius) => {
+          projected.copy(position).project(camera);
+          if (projected.z < -1 || projected.z > 1) return;
+          visuals.push({ x: (projected.x + 1) * window.innerWidth * 0.5, y: (1 - projected.y) * window.innerHeight * 0.5, radius });
+        };
+        const heroPosition = new THREE.Vector3();
+        heroObject.getWorldPosition(heroPosition);
+        addVisual(heroPosition, Math.min(window.innerWidth, window.innerHeight) * 0.16);
+        floaters.children.forEach((floater) => {
+          const floaterPosition = new THREE.Vector3();
+          floater.getWorldPosition(floaterPosition);
+          addVisual(floaterPosition, 22);
+        });
+        for (let index = 0; index < positions.length; index += 60) {
+          const particlePosition = new THREE.Vector3(positions[index], positions[index + 1], positions[index + 2]);
+          particles.localToWorld(particlePosition);
+          addVisual(particlePosition, 10);
+        }
+        window.dispatchEvent(new CustomEvent('scene-visuals', { detail: visuals }));
+      }
+      visualFrame += 1;
       renderer.render(scene, camera);
     };
     animate();
