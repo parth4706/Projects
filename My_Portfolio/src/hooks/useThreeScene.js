@@ -165,10 +165,8 @@ export function useThreeScene(canvasRef, reduceMotion, setMouse) {
       heroObject.rotation.x = time * 0.05 + my * 0.2;
       particles.rotation.y = time * 0.014 + scrollProgress * 0.5;
       floaters.children.forEach((floater) => { floater.rotation.x += floater.userData.speed * 0.01; floater.rotation.y += floater.userData.speed * 0.015; });
-      if (!dragging) {
         camera.position.x += (mx * 1.1 - camera.position.x) * 0.045;
         camera.position.y += (-my * 0.7 - camera.position.y) * 0.045;
-      }
       camera.position.z += (14 - camera.position.z) * 0.045;
       camera.lookAt(0, 0, 0);
       renderer.render(scene, camera);
