@@ -48,7 +48,7 @@ jobs:
       - name: Upload website files
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./dist
+          path: ./My_Portfolio/dist
 
       - name: Deploy website
         id: deployment
