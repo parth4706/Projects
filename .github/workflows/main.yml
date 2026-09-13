@@ -36,9 +36,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: ./My_Portfolio
 
       - name: Build website
         run: npm run build
+        working-directory: ./My_Portfolio
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
