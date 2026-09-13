@@ -62,17 +62,21 @@ function TiltCard({ children, className, max, as: Element = 'div', ...props }) {
   return <Element ref={ref} className={className} {...props}>{children}</Element>;
 }
 
+function ReadabilityLayer() {
+  return <span className="panel-blur" aria-hidden="true" />;
+}
+
 function Skills() {
   const [open, setOpen] = useState(null);
-  return <section className="section skills" id="skills"><h2 className="section-head">Skillset</h2><div className="skills-grid">{SKILLS.map((skill, index) => <TiltCard as="button" key={skill.code} type="button" aria-expanded={open === index} onClick={() => setOpen(open === index ? null : index)} className={`skill-card tilt ${open === index ? 'is-open' : ''}`} max={6}><span className="skill-badge">{skill.code}</span><span className="skill-name">{skill.name}</span><span className="skill-desc">{skill.desc}</span></TiltCard>)}</div></section>;
+  return <section className="section skills" id="skills"><h2 className="section-head">Skillset</h2><div className="skills-grid">{SKILLS.map((skill, index) => <TiltCard as="button" key={skill.code} type="button" aria-expanded={open === index} onClick={() => setOpen(open === index ? null : index)} className={`skill-card tilt readability-panel ${open === index ? 'is-open' : ''}`} max={6}><ReadabilityLayer /><span className="skill-badge">{skill.code}</span><span className="skill-name">{skill.name}</span><span className="skill-desc">{skill.desc}</span></TiltCard>)}</div></section>;
 }
 
 function Projects() {
-  return <section className="section projects" id="projects"><h2 className="section-head">Selected work</h2><div className="projects-grid">{PROJECTS.map((project) => <TiltCard as="article" key={project.title} className="project-card tilt" max={5}>{project.placeholder && <span className="project-flag">{project.label}</span>}<h3 className="project-title">{project.title}</h3><p className="project-desc">{project.description}</p><ul className="project-tags">{project.technologies.map((technology) => <li className="tag-pill" key={technology}>{technology}</li>)}</ul><div className="project-links"><a href={project.github} target="_blank" rel="noopener" className="project-link">Code ↗</a>{project.live ? <a href={project.live} target="_blank" rel="noopener" className="project-link">Live ↗</a> : <span className="project-link is-disabled">Live soon</span>}</div></TiltCard>)}</div></section>;
+  return <section className="section projects" id="projects"><h2 className="section-head">Selected work</h2><div className="projects-grid">{PROJECTS.map((project) => <TiltCard as="article" key={project.title} className="project-card tilt readability-panel" max={5}><ReadabilityLayer />{project.placeholder && <span className="project-flag">{project.label}</span>}<h3 className="project-title">{project.title}</h3><p className="project-desc">{project.description}</p><ul className="project-tags">{project.technologies.map((technology) => <li className="tag-pill" key={technology}>{technology}</li>)}</ul><div className="project-links"><a href={project.github} target="_blank" rel="noopener" className="project-link">Code ↗</a>{project.live ? <a href={project.live} target="_blank" rel="noopener" className="project-link">Live ↗</a> : <span className="project-link is-disabled">Live soon</span>}</div></TiltCard>)}</div></section>;
 }
 
 function Journey() {
-  return <section className="section journey" id="journey"><h2 className="section-head">My journey</h2><div className="journey-track"><div className="journey-line"><div className="journey-line-fill" /></div><ul className="journey-list">{JOURNEY.map((item, index) => <li className={`journey-item ${index % 2 ? 'is-right' : 'is-left'}`} key={`${item.year}-${index}`}><div className="journey-node" /><div className="journey-card glass"><span className="journey-year">{item.year}</span><h3>{item.title}</h3><p>{item.body}</p></div></li>)}</ul></div></section>;
+  return <section className="section journey" id="journey"><h2 className="section-head">My journey</h2><div className="journey-track"><div className="journey-line"><div className="journey-line-fill" /></div><ul className="journey-list">{JOURNEY.map((item, index) => <li className={`journey-item ${index % 2 ? 'is-right' : 'is-left'}`} key={`${item.year}-${index}`}><div className="journey-node" /><div className="journey-card glass readability-panel"><ReadabilityLayer /><span className="journey-year">{item.year}</span><h3>{item.title}</h3><p>{item.body}</p></div></li>)}</ul></div></section>;
 }
 
 function App() {
@@ -83,6 +87,27 @@ function App() {
   const mouse = useRef({ x: 0, y: 0 });
   useThreeScene(bgCanvas, reduceMotion, mouse);
   useNetworkCanvas(networkCanvas, reduceMotion);
+
+  useEffect(() => {
+    const updatePanels = (event) => {
+      const visuals = event.detail || [];
+      document.querySelectorAll('.readability-panel').forEach((panel) => {
+        const bounds = panel.getBoundingClientRect();
+        const masks = visuals.filter((visual) => visual.x + visual.radius >= bounds.left && visual.x - visual.radius <= bounds.right && visual.y + visual.radius >= bounds.top && visual.y - visual.radius <= bounds.bottom).slice(0, 18).map((visual) => {
+          const x = visual.x - bounds.left;
+          const y = visual.y - bounds.top;
+          return `radial-gradient(circle at ${x}px ${y}px, #000 0, #000 ${visual.radius * 0.42}px, transparent ${visual.radius}px)`;
+        });
+        const layer = panel.querySelector('.panel-blur');
+        if (!layer) return;
+        const mask = masks.length ? masks.join(',') : 'none';
+        layer.style.maskImage = mask;
+        layer.style.webkitMaskImage = mask;
+      });
+    };
+    window.addEventListener('scene-visuals', updatePanels);
+    return () => window.removeEventListener('scene-visuals', updatePanels);
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle('menu-open', menuOpen);
@@ -124,7 +149,7 @@ function App() {
     <Navigation open={menuOpen} setOpen={setMenuOpen} />
     <main id="main">
       <section className="section hero" id="home"><div className="hero-content"><h1 className="hero-title"><span className="line">PARTH</span><span className="line">MEHTA</span></h1><p className="hero-tagline">Developer • Builder • Problem Solver</p><p className="hero-intro">Building interactive digital experiences and solving complex problems through code.</p><div className="hero-actions"><a href="#about" className="btn-primary">Explore my work ↓</a></div></div><div className="hero-scroll-cue" aria-hidden="true"><span className="stem" /><span>Scroll</span></div></section>
-      <section className="section about" id="about"><h2 className="section-head">About me</h2><div className="about-panel glass frame-corners"><div className="about-floaters" aria-hidden="true"><span style={{ top: '8%', left: '-4%', animationDelay: '0s' }}>{'{ }'}</span><span style={{ top: '60%', left: '96%', animationDelay: '1.4s' }}>&lt;/&gt;</span><span style={{ top: '85%', left: '-2%', animationDelay: '2.6s' }}>01</span><span style={{ top: '20%', left: '98%', animationDelay: '3.6s' }}>1010</span></div><p className="about-lead">I'm Parth Mehta, a developer who enjoys building things, exploring new technologies, and solving challenging problems.</p><p className="about-sub">Curious by nature - I like taking systems apart to understand how they work, then putting that understanding into things I build.</p></div></section>
+      <section className="section about" id="about"><h2 className="section-head">About me</h2><div className="about-panel glass frame-corners readability-panel"><ReadabilityLayer /><div className="about-floaters" aria-hidden="true"><span style={{ top: '8%', left: '-4%', animationDelay: '0s' }}>{'{ }'}</span><span style={{ top: '60%', left: '96%', animationDelay: '1.4s' }}>&lt;/&gt;</span><span style={{ top: '85%', left: '-2%', animationDelay: '2.6s' }}>01</span><span style={{ top: '20%', left: '98%', animationDelay: '3.6s' }}>1010</span></div><p className="about-lead">I'm Parth Mehta, a developer who enjoys building things, exploring new technologies, and solving challenging problems.</p><p className="about-sub">Curious by nature - I like taking systems apart to understand how they work, then putting that understanding into things I build.</p></div></section>
       <Skills /><Projects /><Journey />
       <section className="section think" id="think"><h2 className="section-head">Think. Build. Solve.</h2><p className="think-statement">I enjoy algorithmic problem solving as much as I enjoy shipping software - breaking a hard problem into small, connected pieces is most of the work.</p><div className="network-wrap frame-corners"><canvas id="networkCanvas" ref={networkCanvas} /></div></section>
       <section className="section contact" id="contact"><div className="contact-orb-wrap" aria-hidden="true"><div className="contact-orb" /></div><h2 className="section-head">Let's build something</h2><p className="contact-sub">Have an idea, opportunity, or project in mind?</p><div className="contact-links"><a className="btn-ghost" href="https://www.linkedin.com/in/parth-mehta-4327761ab/" target="_blank" rel="noopener">LinkedIn ↗</a><a className="btn-ghost" href="https://github.com/parth4706" target="_blank" rel="noopener">GitHub ↗</a><a className="btn-ghost" href="https://leetcode.com/u/__Parth/" target="_blank" rel="noopener">LEETCODE ↗</a></div><a className="btn-primary contact-cta" href="mailto:parthmehta4706@gmail.com">Say hello</a></section>
